@@ -73,10 +73,7 @@ class SourceFaker(LoggingMixin):
             os.makedirs(self.data_output)
 
     def _create_columns(self, col_amount: int) -> list[DatabaseColumn]:
-        return [
-            self.fake.database_column()
-            for i in range(1, col_amount + 1)
-        ]
+        return [self.fake.database_column() for _ in range(1, col_amount + 1)]
 
     def _create_file(self):
         full_path = path.join(
@@ -94,7 +91,7 @@ class SourceFaker(LoggingMixin):
         rows = []
         for i in range(1, row_amount+1):
             row = {
-                column.column_name: self.fake.name() # TODO Fix each column value
+                column.column_name: column.generate()
                 for column in self.columns
             }
             rows.append(row)

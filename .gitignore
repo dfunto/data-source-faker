@@ -1,6 +1,9 @@
 # Local data folder
 data/
 
+# Apple
+.DS_Store
+
 # JetBrains IDE
 .idea
 

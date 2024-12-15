@@ -1,65 +1,21 @@
-import time
-import schedule
-import pandas as pd
+import argparse
 
-from datetime import timedelta
-from pathlib import Path
-from faker import Faker
+from source_faker import SourceFaker
 
-class SourceFaker:
-    def __init__(
-        self,
-        data_output: str = "./data",
-        batch_rows: int = 100,
-        batch_frequency_seconds: int = 10,
-        duration_seconds: int = 60
-    ):
-        self.data_output = data_output
-        self.batch_rows = batch_rows
-        self.batch_frequency_seconds = batch_frequency_seconds
-        self.duration_seconds = duration_seconds
-
-        self.fake = Faker(use_weighting=False)
-        self.file_index = 1
-
-    def run(self):
-        self._setup()
-
-        (schedule
-         .every(self.batch_frequency_seconds)
-         .seconds
-         .until(timedelta(seconds=self.duration_seconds))
-         .do(self._create_files))
-
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
-            if not schedule.next_run():
-                return
-
-    def _setup(self):
-        Path(self.data_output).mkdir(parents=True, exist_ok=True)
-
-    def _create_files(self):
-        df = self._create_rows(self.batch_rows)
-        df.to_parquet(f"{self.data_output}/sample_{self.file_index}.parquet")
-        self.file_index += 1
-
-    def _create_rows(self, row_amount: int) -> pd.DataFrame:
-        rows = []
-        for i in range(1, row_amount+1):
-            rows.append({
-                "name": self.fake.name(),
-                "address": self.fake.address(),
-                "comment": self.fake.text()
-            })
-        return pd.DataFrame(rows)
+def setup_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output_path", required=True ,help="Folder where the data will be output")
+    parser.add_argument("--file_name", required=True, help="Name of the file, an index will be added for each file created (eg. sample_1.parquet, sample_2.parquet")
+    parser.add_argument("--file_format", required=True, help=f"File format of the source: {','.join(SourceFaker.FILE_FORMATS)}", choices=SourceFaker.FILE_FORMATS, type=str.upper)
+    parser.add_argument("--batch_frequency_seconds", type=int, help="Amount of seconds between each file creation")
+    return parser.parse_args()
 
 
-def main():
-    source_faker = SourceFaker()
+def main(args: argparse.Namespace):
+    source_faker = SourceFaker(**vars(args))
     source_faker.run()
 
 
 if __name__ == "__main__":
-    main()
+    parsed_args = setup_args()
+    main(args=parsed_args)

@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from dataclasses import dataclass
 
 from faker.providers import BaseProvider, ElementsType
 from faker.providers.misc import Provider as MiscProvider
@@ -7,12 +6,7 @@ from faker.providers.lorem import Provider as LoremProvider
 from faker.providers.date_time import Provider as DateProvider
 from faker.providers.person import Provider as PersonProvider
 
-@dataclass
-class DatabaseColumn:
-    column_name: str
-    column_type: any
-    generate: Callable
-    category: str
+from source_faker.models import DatabaseColumn
 
 
 class DatabaseColumnProvider(BaseProvider):

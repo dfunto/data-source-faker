@@ -1,62 +1,54 @@
 import os.path
 import time
+from typing import Union, List
+
 import schedule
 import pandas as pd
 
 from os import path
 from datetime import timedelta
 from urllib.parse import urlparse
-from functools import cached_property
 from faker import Faker
 
 from source_faker.logging_mixin import LoggingMixin
 from source_faker.providers import DatabaseColumnProvider
-from source_faker.providers.database_column import DatabaseColumn
+from source_faker.models import DatabaseColumn, TableSettings
 
 
 class SourceFaker(LoggingMixin):
-    FILE_FORMATS: set[str] = {"JSON", "PARQUET"}
+    FILE_FORMATS: set[str] = {"json", "parquet"}
 
     def __init__(
         self,
-        output_path: str,
-        file_name: str,
-        file_format: str,
-        batch_rows: int = 100,
-        batch_cols: int = 10,
-        batch_frequency_seconds: int = 10,
-        duration_seconds: int = 60
+        output_path: str
     ):
         self.data_output = output_path
-        self.file_name= file_name
-        self.file_format = file_format
-        self.batch_rows = batch_rows
-        self.batch_cols = batch_cols
-        self.batch_frequency_seconds = batch_frequency_seconds
-        self.duration_seconds = duration_seconds
-
+        self.tables: list[TableSettings] = []
         self.fake: Faker = self._faker_init()
-        self.columns = self._create_columns(col_amount=batch_cols)
-        self.file_index: int = 1
+
+    def add_tables(self, tables: Union[TableSettings, List[TableSettings]]):
+        if not isinstance(tables, list):
+            tables = [tables]
+        self.tables.extend(tables)
 
     def run(self):
         self._validate()
 
-        (schedule
-         .every(self.batch_frequency_seconds)
-         .seconds
-         .until(timedelta(seconds=self.duration_seconds))
-         .do(self._create_file))
+        for table in self.tables:
+            if not table.columns:
+                table.columns = self._create_columns(col_amount=table.columns_amount)
+
+            (schedule
+             .every(table.batch_frequency_seconds)
+             .seconds
+             .until(timedelta(seconds=table.duration_seconds))
+             .do(self._create_file, table))
 
         while True:
             schedule.run_pending()
             time.sleep(1)
             if not schedule.next_run():
                 return
-
-    @cached_property
-    def available_fields(self) -> list[str]:
-        return [method for method in dir(self.fake) if not method.startswith("_")]
 
     @staticmethod
     def _faker_init() -> Faker:
@@ -65,9 +57,10 @@ class SourceFaker(LoggingMixin):
         return fake
 
     def _validate(self):
-        if self.file_format not in self.FILE_FORMATS:
-            raise ValueError(f"Invalid file format {self.file_format}, allowed values {','.join(self.FILE_FORMATS)}")
+        if not self.tables:
+            raise ValueError(f"No tables defined, use the add_table method before running")
 
+        # Create target directory if targeting the local file system
         url = urlparse(self.data_output)
         if not url.scheme and not os.path.exists(self.data_output):
             os.makedirs(self.data_output)
@@ -75,24 +68,24 @@ class SourceFaker(LoggingMixin):
     def _create_columns(self, col_amount: int) -> list[DatabaseColumn]:
         return [self.fake.database_column() for _ in range(1, col_amount + 1)]
 
-    def _create_file(self):
+    def _create_file(self, table: TableSettings):
+        current_timestamp = int(time.time())
         full_path = path.join(
             self.data_output,
-            f"{self.file_name}_{self.file_index:06d}.parquet"
+            f"{table.table_name}_{current_timestamp}.parquet"
         )
-
-        df = self._create_rows(row_amount=self.batch_rows)
+        df = self._create_rows(table=table)
         df.to_parquet(full_path)
 
         self.log.info(f"Created file {full_path}")
-        self.file_index += 1
 
-    def _create_rows(self, row_amount: int) -> pd.DataFrame:
+    @staticmethod
+    def _create_rows(table: TableSettings) -> pd.DataFrame:
         rows = []
-        for i in range(1, row_amount+1):
+        for i in range(1, table.batch_rows+1):
             row = {
                 column.column_name: column.generate()
-                for column in self.columns
+                for column in table.columns
             }
             rows.append(row)
         return pd.DataFrame(rows)

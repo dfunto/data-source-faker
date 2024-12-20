@@ -1,5 +1,6 @@
 # Local data folder
 data/
+.data/
 
 # Apple
 .DS_Store

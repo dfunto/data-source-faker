@@ -18,11 +18,7 @@ from source_faker.models import DatabaseColumn, TableSettings
 class SourceFaker(LoggingMixin):
     FILE_FORMATS: set[str] = {"json", "parquet"}
 
-    def __init__(
-        self,
-        output_path: str
-    ):
-        self.data_output = output_path
+    def __init__(self):
         self.tables: list[TableSettings] = []
         self.fake: Faker = self._faker_init()
 
@@ -61,9 +57,10 @@ class SourceFaker(LoggingMixin):
             raise ValueError(f"No tables defined, use the add_table method before running")
 
         # Create target directory if targeting the local file system
-        url = urlparse(self.data_output)
-        if not url.scheme and not os.path.exists(self.data_output):
-            os.makedirs(self.data_output)
+        for table in self.tables:
+            url = urlparse(table.output_path)
+            if not url.scheme and not os.path.exists(table.output_path):
+                os.makedirs(table.output_path)
 
     def _create_columns(self, col_amount: int) -> list[DatabaseColumn]:
         return [self.fake.database_column() for _ in range(1, col_amount + 1)]
@@ -71,7 +68,7 @@ class SourceFaker(LoggingMixin):
     def _create_file(self, table: TableSettings):
         current_timestamp = int(time.time())
         full_path = path.join(
-            self.data_output,
+            table.output_path,
             f"{table.table_name}_{current_timestamp}.parquet"
         )
         df = self._create_rows(table=table)

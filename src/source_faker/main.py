@@ -11,7 +11,7 @@ from faker import Faker
 from typing import Union, List
 
 from source_faker.logging.logging_mixin import LoggingMixin
-from source_faker.models import DatabaseColumn, TableSettings, Config
+from source_faker.models import DatabaseColumn, TableSettings, Config, ColumnType
 from source_faker.providers import DatabaseColumnProvider
 from source_faker.yaml.dumper import Dumper
 
@@ -29,8 +29,8 @@ class SourceFaker(LoggingMixin):
         self.fake: Faker = self._faker_init()
 
         if config_path:
-            self.tables = self._parse_config(config_path)
-
+            config = self._parse_config(config_path)
+            self.tables = config.tables
 
     def add_tables(self, tables: Union[TableSettings, List[TableSettings]]):
         if not isinstance(tables, list):
@@ -59,20 +59,47 @@ class SourceFaker(LoggingMixin):
                 output_path=self.export_path
             )
 
-        # while True:
-        #     schedule.run_pending()
-        #     time.sleep(1)
-        #     if not schedule.next_run():
-        #         return
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+            if not schedule.next_run():
+                return
+
+    def _validate(self):
+        if not self.tables:
+            raise ValueError(f"No tables defined, use the add_table method before running")
+
+        # Create target directory if targeting the local file system
+        for table in self.tables:
+            url = urlparse(table.output_path)
+            if not url.scheme and not os.path.exists(table.output_path):
+                os.makedirs(table.output_path)
 
     @staticmethod
-    def _parse_config(config_path: str) -> List[TableSettings]:
+    def _parse_config(config_path: str) -> Config:
         with open(config_path, 'r') as file:
             raw_config = yaml.safe_load(file)
 
-        return raw_config
-        # for key in raw_config:
+        if "tables" not in raw_config:
+            raise ValueError("Root 'tables' key not found in config file provided")
 
+        tables = []
+        for table in raw_config['tables']:
+            columns = []
+            for column in table['columns']:
+                columns.append(DatabaseColumn(
+                    column_name=column['column_name'],
+                    column_type=ColumnType(column['column_type'])
+                ))
+
+            tables.append(TableSettings(
+                table_name=table['table_name'],
+                output_path=table['output_path'],
+                table_format=table['output_path'],
+                columns=columns
+            ))
+
+        return Config(tables=tables)
 
     @staticmethod
     def _export_config(config: Config, output_path: str):
@@ -87,22 +114,11 @@ class SourceFaker(LoggingMixin):
                 Dumper=Dumper
             )
 
-
     @staticmethod
     def _faker_init() -> Faker:
         fake = Faker(use_weighting=False)
         fake.add_provider(DatabaseColumnProvider)
         return fake
-
-    def _validate(self):
-        if not self.tables:
-            raise ValueError(f"No tables defined, use the add_table method before running")
-
-        # Create target directory if targeting the local file system
-        for table in self.tables:
-            url = urlparse(table.output_path)
-            if not url.scheme and not os.path.exists(table.output_path):
-                os.makedirs(table.output_path)
 
     def _create_file(self, table: TableSettings):
         current_timestamp = int(time.time())
@@ -115,13 +131,27 @@ class SourceFaker(LoggingMixin):
 
         self.log.info(f"Created file {full_path}")
 
-    @staticmethod
-    def _create_rows(table: TableSettings) -> pd.DataFrame:
+    def _create_rows(self, table: TableSettings) -> pd.DataFrame:
         rows = []
         for i in range(1, table.batch_rows+1):
             row = {
-                column.column_name: column.generate()
+                column.column_name: self._generate_column_value(column.column_type)
                 for column in table.columns
             }
             rows.append(row)
         return pd.DataFrame(rows)
+
+    def _generate_column_value(self, column_type: ColumnType):
+        return {
+            'boolean': self.fake.boolean,
+            'date': self.fake.date,
+            'float': self.fake.random_number,
+            'integer': self.fake.random_int,
+            'numeric':  self.fake.random_number,
+            'serial': self.fake.random_int,
+            'bigserial': self.fake.random_int,
+            'uuid': self.fake.random_int,
+            'text': self.fake.text,
+            'timestamp': self.fake.unix_time,
+            'varchar': self.fake.name
+        }[column_type.value]()

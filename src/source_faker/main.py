@@ -47,7 +47,6 @@ class SourceFaker(LoggingMixin):
             if not table.columns:
                 table.columns = self.create_columns(col_amount=table.columns_amount)
 
-            print(table.duration_seconds)
             (schedule
              .every(table.batch_frequency_seconds)
              .seconds

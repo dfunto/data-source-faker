@@ -1,5 +1,4 @@
 from source_faker import SourceFaker
-from source_faker.models import TableSettings, DatabaseColumn, ColumnType
 
 
 def main():

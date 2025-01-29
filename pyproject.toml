@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "source-faker"
+name = "data-source-faker"
 version = "0.1.0"
 description = ""
-authors = ["dfunto <danilo.castrodutra@brenntag.com>"]
+authors = ["dfunto <dadutra2@gmail.com>"]
 readme = "README.md"
-packages = [{include = "source_faker", from = "src"}]
+packages = [{include = "data_source_faker", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -1,4 +1,4 @@
-# source-faker
+# Data Source Faker
 Generates fake source data for testing data ingestion pipeline
 
 

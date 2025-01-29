@@ -1,1 +1,1 @@
-from source_faker.providers.database_column import DatabaseColumnProvider
+from data_source_faker.providers.database_column import DatabaseColumnProvider

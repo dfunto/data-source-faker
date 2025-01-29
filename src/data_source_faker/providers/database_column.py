@@ -1,5 +1,5 @@
 from faker.providers import BaseProvider, ElementsType
-from source_faker.models import DatabaseColumn, ColumnType
+from data_source_faker.models import DatabaseColumn, ColumnType
 
 
 class DatabaseColumnProvider(BaseProvider):

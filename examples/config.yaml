@@ -1,0 +1,26 @@
+tables:
+  - table_name: table_1
+    output_path: "data/table_1"
+    table_format: parquet
+    columns:
+      - column_name: id
+        column_type: uuid
+      - column_name: full_name
+        column_type: varchar
+      - column_name: order_description
+        column_type: text
+      - column_name: order_status
+        column_type: varchar
+      - column_name: zip_code
+        column_type: varchar
+      - column_name: house_number
+        column_type: integer
+      - column_name: is_completed
+        column_type: boolean
+      - column_name: created_at
+        column_type: timestamp
+      - column_name: updated_at
+        column_type: timestamp
+    batch_frequency_seconds: 10
+    duration_seconds: 3600
+    batch_rows: 10000

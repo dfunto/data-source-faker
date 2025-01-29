@@ -1,6 +1,6 @@
 import yaml
 
-from source_faker.models import ColumnType
+from data_source_faker.models import ColumnType
 
 
 class Dumper(yaml.Dumper):

@@ -10,13 +10,13 @@ from urllib.parse import urlparse
 from faker import Faker
 from typing import Union, List
 
-from source_faker.logging.logging_mixin import LoggingMixin
-from source_faker.models import DatabaseColumn, TableSettings, Config, ColumnType
-from source_faker.providers import DatabaseColumnProvider
-from source_faker.yaml.dumper import Dumper
+from data_source_faker.logging.logging_mixin import LoggingMixin
+from data_source_faker.models import DatabaseColumn, TableSettings, Config, ColumnType
+from data_source_faker.providers import DatabaseColumnProvider
+from data_source_faker.yaml.dumper import Dumper
 
 
-class SourceFaker(LoggingMixin):
+class DataSourceFaker(LoggingMixin):
 
     def __init__(
         self,

@@ -35,6 +35,7 @@ class TableSettings:
     batch_frequency_seconds: int = 10
     duration_seconds: int = 60
     batch_rows: int = 100
+    run_once: bool = False
 
 @dataclass
 class Config:

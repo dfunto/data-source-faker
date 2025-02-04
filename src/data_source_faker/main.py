@@ -40,18 +40,23 @@ class DataSourceFaker(LoggingMixin):
     def create_columns(self, col_amount: int) -> list[DatabaseColumn]:
         return [self.fake.database_column() for _ in range(1, col_amount + 1)]
 
+    def _setup_frequency(self, table: TableSettings):
+        if table.run_once:
+            return self._create_file(table)
+
+        (schedule
+         .every(table.batch_frequency_seconds)
+         .seconds
+         .until(timedelta(seconds=table.duration_seconds))
+         .do(self._create_file, table))
+
     def run(self):
         self._validate()
 
         for table in self.tables:
             if not table.columns:
                 table.columns = self.create_columns(col_amount=table.columns_amount)
-
-            (schedule
-             .every(table.batch_frequency_seconds)
-             .seconds
-             .until(timedelta(seconds=table.duration_seconds))
-             .do(self._create_file, table))
+            self._setup_frequency(table)
 
         if self.export_path:
             self._export_config(

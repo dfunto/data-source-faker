@@ -104,7 +104,8 @@ class DataSourceFaker(LoggingMixin):
                 columns=columns,
                 duration_seconds=table.get('duration_seconds', TableSettings.duration_seconds),
                 batch_frequency_seconds=table.get('batch_frequency_seconds', TableSettings.batch_frequency_seconds),
-                batch_rows=table.get('batch_rows', TableSettings.batch_rows)
+                batch_rows=table.get('batch_rows', TableSettings.batch_rows),
+                run_once=table.get('run_once', False)
             ))
 
         return Config(tables=tables)

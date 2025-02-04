@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "data-source-faker"
-version = "0.0.2"
+version = "0.0.3"
 description = ""
 authors = ["dfunto <dadutra2@gmail.com>"]
 readme = "README.md"

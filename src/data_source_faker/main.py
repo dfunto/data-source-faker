@@ -133,10 +133,13 @@ class DataSourceFaker(LoggingMixin):
         current_timestamp = int(time.time())
         full_path = os.path.join(
             table.output_path,
-            f"{table.table_name}_{current_timestamp}.parquet"
+            f"{table.table_name}_{current_timestamp}.{table.table_format}"
         )
         df = self._create_rows(table=table)
-        df.to_parquet(full_path)
+        if table.table_format == "csv":
+            df.to_csv(full_path)
+        else:
+            df.to_parquet(full_path)
 
         self.log.info(f"Created file {full_path}")
 

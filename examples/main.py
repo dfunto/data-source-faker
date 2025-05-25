@@ -3,7 +3,7 @@ from data_source_faker import DataSourceFaker
 
 def main():
     DataSourceFaker(
-        config_path="examples/config.yaml"
+        config_path="config.yaml"
     ).run()
 
 
